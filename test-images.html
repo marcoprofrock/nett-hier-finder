@@ -1,0 +1,109 @@
+<html lang="de"><head>
+    <meta charset="UTF-8">
+    <title>Bild-Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-box img {
+            max-width: 300px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .success { background: #E8F5E9; color: #2E7D32; }
+        .error { background: #FFEBEE; color: #C62828; }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Instagram Bild-URL Test</h1>
+    <p>Testet ob Instagram-URLs wirklich im Browser laden</p>
+    
+    <div id="tests"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://fmnshdjqmsladddxcheb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtbnNoZGpxbXNsYWRkZHhjaGViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MDg5MTUsImV4cCI6MjA4NTE4NDkxNX0.UwXYfDd2C300UtvI8Rc2t0S6uCaeFpgecRgGogOdW4c';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testImages() {
+            const testsDiv = document.getElementById('tests');
+            
+            // Lade 10 zufällige Instagram-Sticker
+            const { data, error } = await supabaseClient
+                .from('sticker_findings')
+                .select('id, image_url, city, country, created_at')
+                .eq('source', 'Instagram')
+                .eq('status', 'approved')
+                .limit(10);
+            
+            if (error) {
+                testsDiv.innerHTML = `<div class="test-box"><p class="status error">Fehler: ${error.message}</p></div>`;
+                return;
+            }
+            
+            data.forEach((sticker, index) => {
+                const box = document.createElement('div');
+                box.className = 'test-box';
+                box.innerHTML = `
+                    <h3>Test ${index + 1}: ${sticker.city}, ${sticker.country}</h3>
+                    <p style="font-size: 11px; color: #666; word-break: break-all;">
+                        ${sticker.image_url}
+                    </p>
+                    <p style="font-size: 12px; color: #999;">
+                        Hochgeladen: ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
+                    </p>
+                    
+                    <h4>A) Original-URL:</h4>
+                    <img src="${sticker.image_url}" 
+                         onload="this.nextElementSibling.className='status success'; this.nextElementSibling.textContent='✅ Lädt direkt!'"
+                         onerror="this.nextElementSibling.className='status error'; this.nextElementSibling.textContent='❌ CORS blockiert oder expired'">
+                    <div class="status">Lädt...</div>
+                    
+                    <h4>B) Via weserv.nl Proxy:</h4>
+                    <img src="https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300" 
+                         onload="this.nextElementSibling.className='status success'; this.nextElementSibling.textContent='✅ Proxy funktioniert!'"
+                         onerror="this.nextElementSibling.className='status error'; this.nextElementSibling.textContent='❌ Proxy fehlgeschlagen'">
+                    <div class="status">Lädt...</div>
+                    
+                    <h4>C) Via wsrv.nl Proxy:</h4>
+                    <img src="https://wsrv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300" 
+                         onload="this.nextElementSibling.className='status success'; this.nextElementSibling.textContent='✅ Alternative Proxy funktioniert!'"
+                         onerror="this.nextElementSibling.className='status error'; this.nextElementSibling.textContent='❌ Alternative auch nicht'">
+                    <div class="status">Lädt...</div>
+                    
+                    <h4>D) Mit crossorigin + referrer:</h4>
+                    <img src="${sticker.image_url}" 
+                         crossorigin="anonymous"
+                         referrerpolicy="no-referrer"
+                         onload="this.nextElementSibling.className='status success'; this.nextElementSibling.textContent='✅ Mit CORS-Header funktioniert!'"
+                         onerror="this.nextElementSibling.className='status error'; this.nextElementSibling.textContent='❌ Auch mit Headers nicht'">
+                    <div class="status">Lädt...</div>
+                    
+                    <hr style="margin: 20px 0;">
+                `;
+                testsDiv.appendChild(box);
+            });
+        }
+        
+        testImages();
+    </script>
+
+</body></html>
