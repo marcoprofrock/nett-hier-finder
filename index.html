@@ -741,23 +741,50 @@
 
         async function loadStickersOnMap() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('sticker_findings')
-                    .select('*')
-                    .eq('status', 'approved')
-                    .order('created_at', { ascending: false })
-                    .limit(10000);
+                let allStickers = [];
+                let from = 0;
+                const batchSize = 1000;
+                let hasMore = true;
 
-                if (error) {
-                    console.error('Map load error:', error);
-                    return;
+                console.log('🔄 Lade Sticker in Batches...');
+
+                // Lade alle Daten in Batches von 1000
+                while (hasMore) {
+                    const { data, error } = await supabaseClient
+                        .from('sticker_findings')
+                        .select('*')
+                        .eq('status', 'approved')
+                        .order('created_at', { ascending: false })
+                        .range(from, from + batchSize - 1);
+
+                    if (error) {
+                        console.error('Map load error:', error);
+                        break;
+                    }
+
+                    if (data && data.length > 0) {
+                        allStickers = allStickers.concat(data);
+                        console.log(`  ✅ Batch ${Math.floor(from/batchSize) + 1}: ${data.length} Sticker`);
+                        from += batchSize;
+                        
+                        // Wenn weniger als batchSize zurück → keine weiteren Daten
+                        if (data.length < batchSize) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
                 }
 
+                console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
+
+                // Alte Marker entfernen
                 const markers = document.querySelectorAll('.maplibregl-marker');
                 markers.forEach(marker => marker.remove());
 
-                if (data && data.length > 0) {
-                    data.forEach(sticker => {
+                // Alle Marker auf Karte setzen
+                if (allStickers.length > 0) {
+                    allStickers.forEach(sticker => {
                         if (sticker.latitude && sticker.longitude) {
                             const imageUrl = `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
                             
@@ -796,21 +823,50 @@
 
         async function loadStats() {
             try {
-                const { data, error } = await supabaseClient
+                // Count direkt via count-Option (effizienter)
+                const { count: totalCount, error: countError } = await supabaseClient
                     .from('sticker_findings')
-                    .select('country')
-                    .eq('status', 'approved')
-                    .limit(10000);
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'approved');
 
-                if (error) throw error;
+                if (countError) throw countError;
 
-                const totalCount = data ? data.length : 0;
-                const uniqueCountries = data ? new Set(
-                    data.map(s => s.country).filter(c => c)
-                ).size : 0;
+                // Länder mit Pagination
+                let allCountries = [];
+                let from = 0;
+                const batchSize = 1000;
+                let hasMore = true;
 
-                document.getElementById('total-count').textContent = totalCount;
+                while (hasMore) {
+                    const { data, error } = await supabaseClient
+                        .from('sticker_findings')
+                        .select('country')
+                        .eq('status', 'approved')
+                        .range(from, from + batchSize - 1);
+
+                    if (error) break;
+
+                    if (data && data.length > 0) {
+                        allCountries = allCountries.concat(data);
+                        from += batchSize;
+                        
+                        if (data.length < batchSize) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                const uniqueCountries = new Set(
+                    allCountries.map(s => s.country).filter(c => c)
+                ).size;
+
+                document.getElementById('total-count').textContent = totalCount || 0;
                 document.getElementById('country-count').textContent = uniqueCountries;
+
+                console.log(`📊 Stats: ${totalCount} Sticker in ${uniqueCountries} Ländern`);
+
             } catch (error) {
                 console.error('Fehler beim Laden der Stats:', error);
                 document.getElementById('total-count').textContent = '0';
