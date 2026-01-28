@@ -497,7 +497,6 @@
             box-shadow: 0 4px 12px rgba(42, 38, 35, 0.4);
         }
 
-        /* Größe je nach Anzahl */
         .cluster-small {
             width: 40px;
             height: 40px;
@@ -782,10 +781,9 @@
 
             map.on('load', () => {
                 loadStickersOnMap();
-                setInterval(loadStickersOnMap, 300000); // Alle 5 Min statt 1 Min (Performance)
+                setInterval(loadStickersOnMap, 300000);
             });
 
-            // Bei Zoom/Move: Cluster neu berechnen
             map.on('moveend', updateClusters);
             map.on('zoomend', updateClusters);
         }
@@ -827,7 +825,6 @@
 
                 console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
 
-                // GeoJSON für Clustering vorbereiten
                 const features = allStickers
                     .filter(s => s.latitude && s.longitude)
                     .map(sticker => ({
@@ -847,17 +844,14 @@
                         }
                     }));
 
-                // Supercluster initialisieren
                 clusterIndex = new Supercluster({
-                    radius: 60,        // Cluster-Radius in Pixeln
-                    maxZoom: 14,       // Ab Zoom 15 = einzelne Marker
+                    radius: 60,
+                    maxZoom: 14,
                     minZoom: 0,
-                    minPoints: 2       // Min 2 Punkte für Cluster
+                    minPoints: 2
                 });
 
                 clusterIndex.load(features);
-                
-                // Initial rendern
                 updateClusters();
 
             } catch (error) {
@@ -868,14 +862,12 @@
         function updateClusters() {
             if (!clusterIndex || !map) return;
 
-            // Alte Marker entfernen
             markers.forEach(marker => marker.remove());
             markers = [];
 
             const bounds = map.getBounds();
             const zoom = Math.floor(map.getZoom());
 
-            // Cluster/Marker im sichtbaren Bereich holen
             const clusters = clusterIndex.getClusters(
                 [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
                 zoom
@@ -886,15 +878,12 @@
                 const properties = cluster.properties;
 
                 if (properties.cluster) {
-                    // IST EIN CLUSTER
                     const count = properties.point_count;
                     const clusterId = properties.cluster_id;
                     
-                    // Cluster-Marker erstellen
                     const el = document.createElement('div');
                     el.className = 'cluster-marker';
                     
-                    // Größe je nach Anzahl
                     if (count < 10) {
                         el.classList.add('cluster-small');
                     } else if (count < 100) {
@@ -905,7 +894,6 @@
                     
                     el.textContent = count;
                     
-                    // Click: Zoom auf Cluster
                     el.addEventListener('click', () => {
                         const expansionZoom = Math.min(
                             clusterIndex.getClusterExpansionZoom(clusterId),
@@ -925,62 +913,13 @@
                     markers.push(marker);
                     
                 } else {
-                    // EINZELNER MARKER
                     const sticker = properties;
                     
-                    // Bild-URL mit Fallback
-                    let imageHTML = '';
-                    
-                    // Prüfe ob es eine echte Bild-URL ist
-                    if (sticker.image_url && (
-                        sticker.image_url.includes('cdninstagram') ||
-                        sticker.image_url.includes('scontent') ||
-                        sticker.image_url.includes('supabase.co') ||
-                        sticker.image_url.includes('i.redd.it')
-                    )) {
-                        // Hat Bild-URL → versuche zu laden
-                        const proxyUrl = sticker.image_url.includes('supabase.co') 
-                            ? sticker.image_url  // Supabase direkt
-                            : `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
-                        
-                        imageHTML = `
-                            <img src="${proxyUrl}" 
-                                 class="popup-image" 
-                                 alt="Sticker"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="display: none; width: 100%; height: 180px; 
-                                        background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                        border-radius: 8px; margin-bottom: 12px; flex-direction: column;
-                                        align-items: center; justify-content: center; gap: 10px;">
-                                <span style="font-size: 56px;">📍</span>
-                                <div style="font-size: 12px; color: #2A2623; font-weight: 600;">
-                                    Bild nicht verfügbar
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        // Keine Bild-URL → nur Placeholder
-                        imageHTML = `
-                            <div style="width: 100%; height: 180px; 
-                                        background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                        border-radius: 8px; margin-bottom: 12px; display: flex; flex-direction: column;
-                                        align-items: center; justify-content: center; gap: 10px;">
-                                <span style="font-size: 56px;">📍</span>
-                                <div style="text-align: center; color: #2A2623;">
-                                    <div style="font-size: 14px; font-weight: 700;">Nett hier.</div>
-                                    ${sticker.source ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">${sticker.source}</div>` : ''}
-                                </div>
-                                ${sticker.post_url ? `
-                                    <a href="${sticker.post_url}" 
-                                       target="_blank"
-                                       style="font-size: 11px; color: #2A2623; text-decoration: none; 
-                                              background: rgba(42,38,35,0.15); padding: 6px 12px; border-radius: 6px; font-weight: 600;">
-                                        Original ansehen →
-                                    </a>
-                                ` : ''}
-                            </div>
-                        `;
-                    }
+                    // URL cleanen (falls escaped)
+                    let imageUrl = sticker.image_url
+                        .replace(/&amp;/g, '&')
+                        .replace(/&#039;/g, "'")
+                        .replace(/&quot;/g, '"');
                     
                     const popup = new maptilersdk.Popup({ 
                         offset: 25,
@@ -988,7 +927,32 @@
                     })
                     .setHTML(`
                         <div style="font-family: 'BaWue Sans', sans-serif;">
-                            ${imageHTML}
+                            <img src="${imageUrl}" 
+                                 class="popup-image" 
+                                 alt="Sticker"
+                                 crossorigin="anonymous"
+                                 referrerpolicy="no-referrer"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            
+                            <div style="display: none; width: 100%; height: 180px; 
+                                        background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                        border-radius: 8px; margin-bottom: 12px; flex-direction: column;
+                                        align-items: center; justify-content: center; gap: 10px;">
+                                <span style="font-size: 56px;">📍</span>
+                                <div style="text-align: center; color: #2A2623;">
+                                    <div style="font-size: 14px; font-weight: 700;">Nett hier.</div>
+                                    ${sticker.source ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">${sticker.source} Fund</div>` : ''}
+                                </div>
+                                ${sticker.post_url ? `
+                                    <a href="${sticker.post_url}" 
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       style="font-size: 11px; color: #2A2623; text-decoration: none; 
+                                              background: rgba(42,38,35,0.15); padding: 6px 12px; border-radius: 6px; font-weight: 600;">
+                                        Original ansehen →
+                                    </a>
+                                ` : ''}
+                            </div>
                             
                             <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
                             <p class="popup-meta">
