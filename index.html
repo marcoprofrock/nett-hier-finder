@@ -4,7 +4,7 @@
     <title>Nett hier.</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟡</text></svg>">
     
     <!-- Font Preloading (wichtig für Safari!) -->
     <link rel="preload" href="fonts/BaWueSerifWeb-Bold.woff2" as="font" type="font/woff2" crossorigin="">
@@ -745,7 +745,8 @@
                     .from('sticker_findings')
                     .select('*')
                     .eq('status', 'approved')
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .limit(10000);
 
                 if (error) {
                     console.error('Map load error:', error);
@@ -758,7 +759,6 @@
                 if (data && data.length > 0) {
                     data.forEach(sticker => {
                         if (sticker.latitude && sticker.longitude) {
-                            // Bild-URL via Proxy laden (für Instagram + bessere Kompatibilität)
                             const imageUrl = `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
                             
                             const popup = new maptilersdk.Popup({ offset: 25 })
@@ -799,7 +799,8 @@
                 const { data, error } = await supabaseClient
                     .from('sticker_findings')
                     .select('country')
-                    .eq('status', 'approved');
+                    .eq('status', 'approved')
+                    .limit(10000);
 
                 if (error) throw error;
 
