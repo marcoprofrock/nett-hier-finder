@@ -767,7 +767,6 @@
                         console.log(`  ✅ Batch ${Math.floor(from/batchSize) + 1}: ${data.length} Sticker`);
                         from += batchSize;
                         
-                        // Wenn weniger als batchSize zurück → keine weiteren Daten
                         if (data.length < batchSize) {
                             hasMore = false;
                         }
@@ -786,28 +785,85 @@
                 if (allStickers.length > 0) {
                     allStickers.forEach(sticker => {
                         if (sticker.latitude && sticker.longitude) {
-                            const imageUrl = `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
+                            // Mehrere Proxy-URLs als Fallback
+                            const originalUrl = sticker.image_url;
+                            const proxyUrls = [
+                                `https://images.weserv.nl/?url=${encodeURIComponent(originalUrl)}&w=300&h=300&fit=cover&output=webp`,
+                                `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}&w=300&h=300&fit=cover`,
+                                originalUrl
+                            ];
                             
-                            const popup = new maptilersdk.Popup({ offset: 25 })
-                                .setHTML(`
-                                    <div>
-                                        <img src="${imageUrl}" 
-                                             class="popup-image" 
-                                             alt="Sticker"
-                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                        <div style="display: none; width: 100%; max-width: 250px; height: 200px; 
-                                                    background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                                    border-radius: 8px; margin-bottom: 12px; align-items: center; 
-                                                    justify-content: center; font-size: 64px;">
-                                            📍
+                            const popup = new maptilersdk.Popup({ 
+                                offset: 25,
+                                maxWidth: '280px'
+                            })
+                            .setHTML(`
+                                <div style="font-family: 'BaWue Sans', sans-serif;">
+                                    <img src="${proxyUrls[0]}" 
+                                         class="popup-image" 
+                                         alt="Sticker"
+                                         data-proxy-index="0"
+                                         data-proxies='${JSON.stringify(proxyUrls)}'
+                                         onerror="
+                                             const proxies = JSON.parse(this.getAttribute('data-proxies'));
+                                             const currentIndex = parseInt(this.getAttribute('data-proxy-index'));
+                                             const nextIndex = currentIndex + 1;
+                                             
+                                             if (nextIndex < proxies.length) {
+                                                 this.setAttribute('data-proxy-index', nextIndex);
+                                                 this.src = proxies[nextIndex];
+                                             } else {
+                                                 this.style.display='none'; 
+                                                 this.nextElementSibling.style.display='flex';
+                                             }
+                                         "
+                                         style="width: 100%; max-width: 250px; border-radius: 8px; margin-bottom: 12px; display: block;">
+                                    
+                                    <div style="display: none; width: 100%; height: 180px; 
+                                                background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                                border-radius: 8px; margin-bottom: 12px; flex-direction: column;
+                                                align-items: center; justify-content: center; gap: 10px;">
+                                        <span style="font-size: 56px;">📍</span>
+                                        <div style="text-align: center; color: #2A2623;">
+                                            <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">
+                                                Nett hier.
+                                            </div>
+                                            <div style="font-size: 11px; opacity: 0.8;">
+                                                ${sticker.source || 'Sticker-Fund'}
+                                            </div>
                                         </div>
-                                        <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
-                                        <p class="popup-meta">
-                                            ${sticker.country || '?'} • 
-                                            ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
-                                        </p>
+                                        ${sticker.post_url ? `
+                                            <a href="${sticker.post_url}" 
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               style="font-size: 11px; color: #2A2623; text-decoration: none; 
+                                                      background: rgba(42,38,35,0.1); padding: 6px 12px; border-radius: 6px;">
+                                                Original ansehen →
+                                            </a>
+                                        ` : ''}
                                     </div>
-                                `);
+                                    
+                                    <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
+                                    <p class="popup-meta">
+                                        ${sticker.country || '?'} • 
+                                        ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
+                                    </p>
+                                    
+                                    ${sticker.source && sticker.source !== 'Web' && sticker.post_url ? `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E4E0E0;">
+                                            <p style="margin: 0; font-size: 11px; color: #6D6766;">
+                                                📷 Quelle: 
+                                                <a href="${sticker.post_url}" 
+                                                   target="_blank" 
+                                                   rel="noopener noreferrer" 
+                                                   style="color: #2A2623; font-weight: 600; text-decoration: none;">
+                                                    ${sticker.source}
+                                                </a>
+                                            </p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `);
 
                             new maptilersdk.Marker({ color: BAWUE_YELLOW })
                                 .setLngLat([sticker.longitude, sticker.latitude])
