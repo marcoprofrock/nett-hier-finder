@@ -18,8 +18,7 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Supercluster -->
-    <script src="https://unpkg.com/supercluster@7.1.5/dist/supercluster.min.js"></script>
+
     
     <style>
         /* ========================================
@@ -425,21 +424,7 @@
             height: 500px;
         }
 
-        /* Cluster Styling */
-        .marker-cluster {
-            background: #FFFC00;
-            border: 3px solid #2A2623;
-            border-radius: 50%;
-            color: #2A2623;
-            font-family: 'BaWue Sans', sans-serif;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 2px 8px rgba(42, 38, 35, 0.3);
-        }
+    
 
         .marker-cluster:hover {
             transform: scale(1.1);
@@ -745,9 +730,7 @@
                 setInterval(loadStickersOnMap, 300000);
             });
 
-            map.on('zoom', updateClusters);
-            map.on('move', updateClusters);
-        }
+           
 
         async function loadStickersOnMap() {
             try {
