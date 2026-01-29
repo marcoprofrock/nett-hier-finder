@@ -18,6 +18,9 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- Supercluster -->
+    <script src="https://unpkg.com/supercluster@7.1.5/dist/supercluster.min.js"></script>
+    
     <style>
         /* ========================================
            BAWUE CORPORATE FONTS
@@ -435,10 +438,12 @@
             justify-content: center;
             cursor: pointer;
             transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(42, 38, 35, 0.3);
         }
 
         .marker-cluster:hover {
             transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(42, 38, 35, 0.4);
         }
 
         .maplibregl-popup-content {
@@ -452,9 +457,9 @@
 
         .popup-image {
             width: 100%;
-            max-width: 250px;
             border-radius: 8px;
             margin-bottom: 12px;
+            display: block;
         }
 
         .popup-title {
@@ -598,6 +603,16 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Pulsing Animation für Loading-Placeholder */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .image-loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -692,8 +707,6 @@
         </p>
     </footer>
 
-    <script src="https://unpkg.com/supercluster@7.1.5/dist/supercluster.min.js"></script>
-    
     <script>
         const SUPABASE_URL = 'https://fmnshdjqmsladddxcheb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtbnNoZGpxbXNsYWRkZHhjaGViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MDg5MTUsImV4cCI6MjA4NTE4NDkxNX0.UwXYfDd2C300UtvI8Rc2t0S6uCaeFpgecRgGogOdW4c';
@@ -729,11 +742,9 @@
 
             map.on('load', () => {
                 loadStickersOnMap();
-                // Refresh alle 5 Minuten statt 1 Minute (Performance)
                 setInterval(loadStickersOnMap, 300000);
             });
 
-            // Bei Zoom/Move: Cluster neu berechnen
             map.on('zoom', updateClusters);
             map.on('move', updateClusters);
         }
@@ -777,17 +788,15 @@
 
                 console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
 
-                // Cluster-Daten vorbereiten
+                // GeoJSON Features erstellen
                 const features = allStickers
                     .filter(s => s.latitude && s.longitude)
                     .map(sticker => ({
                         type: 'Feature',
                         properties: {
-                            id: sticker.id,
-                            city: sticker.city,
-                            country: sticker.country,
-                            image_url: sticker.image_url,
-                            created_at: sticker.created_at
+                            cluster: false,
+                            stickerId: sticker.id,
+                            stickerData: sticker
                         },
                         geometry: {
                             type: 'Point',
@@ -795,17 +804,15 @@
                         }
                     }));
 
-                // Supercluster initialisieren
+                // Supercluster mit optimierten Settings
                 cluster = new Supercluster({
-                    radius: 60,
-                    maxZoom: 16,
+                    radius: 40,        // ← Kleinere Cluster (war 60)
+                    maxZoom: 12,       // ← Früher aufbrechen (war 16)
                     minZoom: 0,
-                    minPoints: 2
+                    minPoints: 3       // ← Erst ab 3 Stickern clustern (war 2)
                 });
 
                 cluster.load(features);
-                
-                // Marker anzeigen
                 updateClusters();
 
             } catch (error) {
@@ -816,14 +823,12 @@
         function updateClusters() {
             if (!cluster || !map) return;
 
-            // Alte Marker entfernen
             markers.forEach(marker => marker.remove());
             markers = [];
 
             const bounds = map.getBounds();
             const zoom = Math.floor(map.getZoom());
 
-            // Cluster für aktuellen View berechnen
             const clusters = cluster.getClusters(
                 [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
                 zoom
@@ -831,13 +836,13 @@
 
             console.log(`🗺️ ${clusters.length} Marker/Cluster für Zoom ${zoom}`);
 
-            clusters.forEach(cluster => {
-                const [lng, lat] = cluster.geometry.coordinates;
-                const properties = cluster.properties;
+            clusters.forEach(clusterFeature => {
+                const [lng, lat] = clusterFeature.geometry.coordinates;
+                const props = clusterFeature.properties;
 
-                if (properties.cluster) {
-                    // Cluster-Marker
-                    const count = properties.point_count;
+                if (props.cluster) {
+                    // CLUSTER-MARKER
+                    const count = props.point_count;
                     const size = count < 100 ? 40 : count < 1000 ? 50 : 60;
 
                     const el = document.createElement('div');
@@ -851,10 +856,9 @@
                         .setLngLat([lng, lat])
                         .addTo(map);
 
-                    // Click: Zoom rein
                     el.addEventListener('click', () => {
                         const expansionZoom = Math.min(
-                            cluster.getClusterExpansionZoom(properties.cluster_id),
+                            cluster.getClusterExpansionZoom(props.cluster_id),
                             20
                         );
                         map.easeTo({
@@ -866,30 +870,57 @@
                     markers.push(marker);
 
                 } else {
-                    // Einzelner Marker
-                    const sticker = properties;
+                    // EINZELNER MARKER
+                    const sticker = props.stickerData;
                     
-                    // URL cleanen und durch allorigins Proxy laden
-                    let cleanUrl = sticker.image_url.replace(/&amp;/g, '&');
-                    const imageUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
+                    if (!sticker) return;
+                    
+                    let cleanUrl = sticker.image_url ? sticker.image_url.replace(/&amp;/g, '&') : '';
+                    
+                    // Kleinere Bilder (150px statt 300px) = 4x schneller!
+                    // Hybrid: Erst weserv (schnell), dann allorigins (langsam aber funktioniert)
+                    const imageUrlFast = cleanUrl ? `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=150&h=150&fit=cover&output=jpg&q=70` : '';
+                    const imageUrlSlow = cleanUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}` : '';
                     
                     const popup = new maptilersdk.Popup({ 
                         offset: 25,
                         maxWidth: '280px'
                     })
                     .setHTML(`
-                        <div>
-                            <img src="${imageUrl}" 
-                                 class="popup-image" 
-                                 alt="Sticker"
-                                 loading="lazy"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="display: none; width: 100%; height: 180px; 
-                                        background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                        border-radius: 8px; margin-bottom: 12px; align-items: center; 
-                                        justify-content: center; font-size: 56px;">
-                                📍
-                            </div>
+                        <div style="font-family: 'BaWue Sans', sans-serif;">
+                            ${cleanUrl ? `
+                                <div style="position: relative; width: 100%; height: 150px; margin-bottom: 12px;">
+                                    <!-- Loading Placeholder (pulsiert) -->
+                                    <div class="image-loading" style="position: absolute; width: 100%; height: 100%; 
+                                                background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                                border-radius: 8px; display: flex; align-items: center; 
+                                                justify-content: center; font-size: 40px;">
+                                        ⏳
+                                    </div>
+                                    <!-- Bild (kleiner = schneller!) -->
+                                    <img src="${imageUrlFast}" 
+                                         class="popup-image" 
+                                         alt="Sticker"
+                                         style="position: absolute; width: 100%; height: 100%; object-fit: cover; 
+                                                border-radius: 8px; opacity: 0; transition: opacity 0.3s;"
+                                         onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
+                                         onerror="
+                                             console.log('⚠️ weserv failed, trying allorigins...');
+                                             this.src='${imageUrlSlow}';
+                                             this.onerror=function(){
+                                                 this.previousElementSibling.innerHTML='<span style=font-size:56px>📍</span>';
+                                                 this.previousElementSibling.style.animation='none';
+                                             };
+                                         ">
+                                </div>
+                            ` : `
+                                <div style="width: 100%; height: 150px; 
+                                            background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                            border-radius: 8px; margin-bottom: 12px; display: flex;
+                                            align-items: center; justify-content: center; font-size: 56px;">
+                                    📍
+                                </div>
+                            `}
                             <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
                             <p class="popup-meta">
                                 ${sticker.country || '?'} • 
