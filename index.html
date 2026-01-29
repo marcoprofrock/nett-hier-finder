@@ -18,9 +18,6 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Supercluster -->
-    <script src="https://unpkg.com/supercluster@7.1.5/dist/supercluster.min.js"></script>
-    
     <style>
         /* ========================================
            BAWUE CORPORATE FONTS
@@ -425,34 +422,13 @@
             height: 500px;
         }
 
-        /* Cluster Styling */
-        .marker-cluster {
-            background: #FFFC00;
-            border: 3px solid #2A2623;
-            border-radius: 50%;
-            color: #2A2623;
-            font-family: 'BaWue Sans', sans-serif;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 2px 8px rgba(42, 38, 35, 0.3);
-        }
-
-        .marker-cluster:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(42, 38, 35, 0.4);
-        }
-
         .maplibregl-popup-content {
             padding: 16px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(42, 38, 35, 0.3);
             font-family: 'BaWue Sans', sans-serif;
             border: 2px solid var(--black);
-            max-width: 280px;
+            max-width: 240px;
         }
 
         .popup-image {
@@ -721,8 +697,6 @@
         let selectedPhoto = null;
         let userLocation = null;
         let map = null;
-        let markers = [];
-        let cluster = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
@@ -744,9 +718,6 @@
                 loadStickersOnMap();
                 setInterval(loadStickersOnMap, 300000);
             });
-
-            map.on('zoom', updateClusters);
-            map.on('move', updateClusters);
         }
 
         async function loadStickersOnMap() {
@@ -788,153 +759,78 @@
 
                 console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
 
-                // GeoJSON Features erstellen
-                const features = allStickers
-                    .filter(s => s.latitude && s.longitude)
-                    .map(sticker => ({
-                        type: 'Feature',
-                        properties: {
-                            cluster: false,
-                            stickerId: sticker.id,
-                            stickerData: sticker
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: [sticker.longitude, sticker.latitude]
+                // Alte Marker entfernen
+                const existingMarkers = document.querySelectorAll('.maplibregl-marker');
+                existingMarkers.forEach(marker => marker.remove());
+
+                // Alle Marker direkt auf Karte setzen (OHNE Clustering)
+                if (allStickers.length > 0) {
+                    allStickers.forEach(sticker => {
+                        if (sticker.latitude && sticker.longitude) {
+                            
+                            let cleanUrl = sticker.image_url ? sticker.image_url.replace(/&amp;/g, '&') : '';
+                            
+                            // Kleine Bilder (100x100px) mit Hybrid-Proxy
+                            const imageUrlFast = cleanUrl ? `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=100&h=100&fit=cover&output=jpg&q=70` : '';
+                            const imageUrlSlow = cleanUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}` : '';
+                            
+                            const popup = new maptilersdk.Popup({ 
+                                offset: 25,
+                                maxWidth: '240px'
+                            })
+                            .setHTML(`
+                                <div style="font-family: 'BaWue Sans', sans-serif;">
+                                    ${cleanUrl ? `
+                                        <div style="position: relative; width: 100%; height: 120px; margin-bottom: 12px;">
+                                            <!-- Loading Placeholder -->
+                                            <div class="image-loading" style="position: absolute; width: 100%; height: 100%; 
+                                                        background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                                        border-radius: 8px; display: flex; align-items: center; 
+                                                        justify-content: center; font-size: 36px;">
+                                                ⏳
+                                            </div>
+                                            <!-- Bild -->
+                                            <img src="${imageUrlFast}" 
+                                                 class="popup-image" 
+                                                 alt="Sticker"
+                                                 style="position: absolute; width: 100%; height: 100%; object-fit: cover; 
+                                                        border-radius: 8px; opacity: 0; transition: opacity 0.3s;"
+                                                 onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
+                                                 onerror="
+                                                     this.src='${imageUrlSlow}';
+                                                     this.onerror=function(){
+                                                         this.previousElementSibling.innerHTML='<span style=font-size:48px>📍</span>';
+                                                         this.previousElementSibling.style.animation='none';
+                                                     };
+                                                 ">
+                                        </div>
+                                    ` : `
+                                        <div style="width: 100%; height: 120px; 
+                                                    background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                                    border-radius: 8px; margin-bottom: 12px; display: flex;
+                                                    align-items: center; justify-content: center; font-size: 48px;">
+                                            📍
+                                        </div>
+                                    `}
+                                    <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
+                                    <p class="popup-meta">
+                                        ${sticker.country || '?'} • 
+                                        ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
+                                    </p>
+                                </div>
+                            `);
+
+                            new maptilersdk.Marker({ color: BAWUE_YELLOW })
+                                .setLngLat([sticker.longitude, sticker.latitude])
+                                .setPopup(popup)
+                                .addTo(map);
                         }
-                    }));
-
-                // Supercluster - AGGRESSIVERE Settings
-                cluster = new Supercluster({
-                    radius: 30,        // ← Noch kleinere Cluster!
-                    maxZoom: 10,       // ← Brechen viel früher auf!
-                    minZoom: 0,
-                    minPoints: 3
-                });
-
-                cluster.load(features);
-                updateClusters();
+                    });
+                }
 
             } catch (error) {
                 console.error('Fehler beim Laden der Sticker:', error);
             }
-        }
-
-        function updateClusters() {
-            if (!cluster || !map) return;
-
-            markers.forEach(marker => marker.remove());
-            markers = [];
-
-            const bounds = map.getBounds();
-            const zoom = Math.floor(map.getZoom());
-
-            const clusters = cluster.getClusters(
-                [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
-                zoom
-            );
-
-            console.log(`🗺️ ${clusters.length} Marker/Cluster für Zoom ${zoom}`);
-
-            clusters.forEach(clusterFeature => {
-                const [lng, lat] = clusterFeature.geometry.coordinates;
-                const props = clusterFeature.properties;
-
-                if (props.cluster) {
-                    // CLUSTER-MARKER
-                    const count = props.point_count;
-                    const size = count < 100 ? 40 : count < 1000 ? 50 : 60;
-
-                    const el = document.createElement('div');
-                    el.className = 'marker-cluster';
-                    el.style.width = size + 'px';
-                    el.style.height = size + 'px';
-                    el.style.fontSize = (size / 2.5) + 'px';
-                    el.textContent = count;
-
-                    const marker = new maptilersdk.Marker({ element: el })
-                        .setLngLat([lng, lat])
-                        .addTo(map);
-
-                    el.addEventListener('click', () => {
-                        const expansionZoom = Math.min(
-                            cluster.getClusterExpansionZoom(props.cluster_id),
-                            20
-                        );
-                        map.easeTo({
-                            center: [lng, lat],
-                            zoom: expansionZoom
-                        });
-                    });
-
-                    markers.push(marker);
-
-                } else {
-                    // EINZELNER MARKER
-                    const sticker = props.stickerData;
-                    
-                    if (!sticker) return;
-                    
-                    let cleanUrl = sticker.image_url ? sticker.image_url.replace(/&amp;/g, '&') : '';
-                    
-                    // ULTRA-KLEIN: 100x100px (8x schneller als vorher!)
-                    const imageUrlFast = cleanUrl ? `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=100&h=100&fit=cover&output=jpg&q=70` : '';
-                    const imageUrlSlow = cleanUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}` : '';
-                    
-                    const popup = new maptilersdk.Popup({ 
-                        offset: 25,
-                        maxWidth: '240px'
-                    })
-                    .setHTML(`
-                        <div style="font-family: 'BaWue Sans', sans-serif;">
-                            ${cleanUrl ? `
-                                <div style="position: relative; width: 100%; height: 120px; margin-bottom: 12px;">
-                                    <!-- Loading Placeholder -->
-                                    <div class="image-loading" style="position: absolute; width: 100%; height: 100%; 
-                                                background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                                border-radius: 8px; display: flex; align-items: center; 
-                                                justify-content: center; font-size: 36px;">
-                                        ⏳
-                                    </div>
-                                    <!-- Bild (100x100px = super schnell!) -->
-                                    <img src="${imageUrlFast}" 
-                                         class="popup-image" 
-                                         alt="Sticker"
-                                         style="position: absolute; width: 100%; height: 100%; object-fit: cover; 
-                                                border-radius: 8px; opacity: 0; transition: opacity 0.3s;"
-                                         onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
-                                         onerror="
-                                             this.src='${imageUrlSlow}';
-                                             this.onerror=function(){
-                                                 this.previousElementSibling.innerHTML='<span style=font-size:48px>📍</span>';
-                                                 this.previousElementSibling.style.animation='none';
-                                             };
-                                         ">
-                                </div>
-                            ` : `
-                                <div style="width: 100%; height: 120px; 
-                                            background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                            border-radius: 8px; margin-bottom: 12px; display: flex;
-                                            align-items: center; justify-content: center; font-size: 48px;">
-                                    📍
-                                </div>
-                            `}
-                            <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
-                            <p class="popup-meta">
-                                ${sticker.country || '?'} • 
-                                ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
-                            </p>
-                        </div>
-                    `);
-
-                    const marker = new maptilersdk.Marker({ color: BAWUE_YELLOW })
-                        .setLngLat([lng, lat])
-                        .setPopup(popup)
-                        .addTo(map);
-
-                    markers.push(marker);
-                }
-            });
         }
 
         async function loadStats() {
