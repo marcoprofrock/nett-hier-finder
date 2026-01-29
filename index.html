@@ -4,7 +4,7 @@
     <title>Nett hier.</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟡</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
     
     <!-- Font Preloading (wichtig für Safari!) -->
     <link rel="preload" href="fonts/BaWueSerifWeb-Bold.woff2" as="font" type="font/woff2" crossorigin="">
@@ -741,51 +741,24 @@
 
         async function loadStickersOnMap() {
             try {
-                let allStickers = [];
-                let from = 0;
-                const batchSize = 1000;
-                let hasMore = true;
+                const { data, error } = await supabaseClient
+                    .from('sticker_findings')
+                    .select('*')
+                    .eq('status', 'approved')
+                    .order('created_at', { ascending: false });
 
-                console.log('🔄 Lade Sticker in Batches...');
-
-                // Lade alle Daten in Batches von 1000
-                while (hasMore) {
-                    const { data, error } = await supabaseClient
-                        .from('sticker_findings')
-                        .select('*')
-                        .eq('status', 'approved')
-                        .order('created_at', { ascending: false })
-                        .range(from, from + batchSize - 1);
-
-                    if (error) {
-                        console.error('Map load error:', error);
-                        break;
-                    }
-
-                    if (data && data.length > 0) {
-                        allStickers = allStickers.concat(data);
-                        console.log(`  ✅ Batch ${Math.floor(from/batchSize) + 1}: ${data.length} Sticker`);
-                        from += batchSize;
-                        
-                        // Wenn weniger als batchSize zurück → keine weiteren Daten
-                        if (data.length < batchSize) {
-                            hasMore = false;
-                        }
-                    } else {
-                        hasMore = false;
-                    }
+                if (error) {
+                    console.error('Map load error:', error);
+                    return;
                 }
 
-                console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
-
-                // Alte Marker entfernen
                 const markers = document.querySelectorAll('.maplibregl-marker');
                 markers.forEach(marker => marker.remove());
 
-                // Alle Marker auf Karte setzen
-                if (allStickers.length > 0) {
-                    allStickers.forEach(sticker => {
+                if (data && data.length > 0) {
+                    data.forEach(sticker => {
                         if (sticker.latitude && sticker.longitude) {
+                            // Bild-URL via Proxy laden (für Instagram + bessere Kompatibilität)
                             const imageUrl = `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
                             
                             const popup = new maptilersdk.Popup({ offset: 25 })
@@ -823,50 +796,20 @@
 
         async function loadStats() {
             try {
-                // Count direkt via count-Option (effizienter)
-                const { count: totalCount, error: countError } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('sticker_findings')
-                    .select('*', { count: 'exact', head: true })
+                    .select('country')
                     .eq('status', 'approved');
 
-                if (countError) throw countError;
+                if (error) throw error;
 
-                // Länder mit Pagination
-                let allCountries = [];
-                let from = 0;
-                const batchSize = 1000;
-                let hasMore = true;
+                const totalCount = data ? data.length : 0;
+                const uniqueCountries = data ? new Set(
+                    data.map(s => s.country).filter(c => c)
+                ).size : 0;
 
-                while (hasMore) {
-                    const { data, error } = await supabaseClient
-                        .from('sticker_findings')
-                        .select('country')
-                        .eq('status', 'approved')
-                        .range(from, from + batchSize - 1);
-
-                    if (error) break;
-
-                    if (data && data.length > 0) {
-                        allCountries = allCountries.concat(data);
-                        from += batchSize;
-                        
-                        if (data.length < batchSize) {
-                            hasMore = false;
-                        }
-                    } else {
-                        hasMore = false;
-                    }
-                }
-
-                const uniqueCountries = new Set(
-                    allCountries.map(s => s.country).filter(c => c)
-                ).size;
-
-                document.getElementById('total-count').textContent = totalCount || 0;
+                document.getElementById('total-count').textContent = totalCount;
                 document.getElementById('country-count').textContent = uniqueCountries;
-
-                console.log(`📊 Stats: ${totalCount} Sticker in ${uniqueCountries} Ländern`);
-
             } catch (error) {
                 console.error('Fehler beim Laden der Stats:', error);
                 document.getElementById('total-count').textContent = '0';
