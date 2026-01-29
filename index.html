@@ -737,7 +737,7 @@
                 center: [9.1829, 48.7758],
                 zoom: 2,
                 minZoom: 1,
-                maxZoom: 18
+                18
             });
 
             map.on('load', () => {
@@ -807,9 +807,9 @@
                 // Supercluster - AGGRESSIVERE Settings
                 cluster = new Supercluster({
                     radius: 30,        // ← Noch kleinere Cluster!
-                    maxZoom: 3,       // ← Brechen viel früher auf!
+                    maxZoom: 6,       // ← Brechen viel früher auf!
                     minZoom: 0,
-                    minPoints: 10
+                    minPoints: 7
                 });
 
                 cluster.load(features);
