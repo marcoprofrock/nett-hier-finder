@@ -804,16 +804,7 @@
                         }
                     }));
 
-                // Supercluster - AGGRESSIVERE Settings
-                cluster = new Supercluster({
-                    radius: 30,        // ← Noch kleinere Cluster!
-                    maxZoom: 10,       // ← Brechen viel früher auf!
-                    minZoom: 0,
-                    minPoints: 3
-                });
-
-                cluster.load(features);
-                updateClusters();
+         
 
             } catch (error) {
                 console.error('Fehler beim Laden der Sticker:', error);
