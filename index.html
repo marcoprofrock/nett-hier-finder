@@ -6,25 +6,24 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟡</text></svg>">
     
-    <!-- Font Preloading -->
+    <!-- Font Preloading (wichtig für Safari!) -->
     <link rel="preload" href="fonts/BaWueSerifWeb-Bold.woff2" as="font" type="font/woff2" crossorigin="">
     <link rel="preload" href="fonts/BaWueSansWeb-Regular.woff2" as="font" type="font/woff2" crossorigin="">
     <link rel="preload" href="fonts/BaWueSansWeb-Bold.woff2" as="font" type="font/woff2" crossorigin="">
     
-    <!-- MapLibre GL JS -->
+    <!-- MapLibre GL JS für MapTiler -->
     <link href="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.css" rel="stylesheet">
     <script src="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.umd.min.js"></script>
     
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-
-    
     <style>
         /* ========================================
            BAWUE CORPORATE FONTS
            ======================================== */
         
+        /* BaWue Serif Regular */
         @font-face {
             font-family: 'BaWue Serif';
             src: url('fonts/BaWueSerifWeb-Regular.woff2') format('woff2'),
@@ -32,8 +31,10 @@
             font-weight: 400;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Serif Bold */
         @font-face {
             font-family: 'BaWue Serif';
             src: url('fonts/BaWueSerifWeb-Bold.woff2') format('woff2'),
@@ -41,8 +42,10 @@
             font-weight: 700;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans Regular */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-Regular.woff2') format('woff2'),
@@ -50,8 +53,10 @@
             font-weight: 400;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans Regular Italic */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-RegularItalic.woff2') format('woff2'),
@@ -59,8 +64,10 @@
             font-weight: 400;
             font-style: italic;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans SemiBold */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-SemiBold.woff2') format('woff2'),
@@ -68,8 +75,10 @@
             font-weight: 600;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans SemiBold Italic */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-SemiBoldItalic.woff2') format('woff2'),
@@ -77,8 +86,10 @@
             font-weight: 600;
             font-style: italic;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans Bold */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-Bold.woff2') format('woff2'),
@@ -86,8 +97,10 @@
             font-weight: 700;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
+        /* BaWue Sans Bold Italic */
         @font-face {
             font-family: 'BaWue Sans';
             src: url('fonts/BaWueSansWeb-BoldItalic.woff2') format('woff2'),
@@ -95,6 +108,7 @@
             font-weight: 700;
             font-style: italic;
             font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
 
         /* ========================================
@@ -384,11 +398,13 @@
         .alert.success {
             background: #E8F5E9;
             color: #2E7D32;
+            border-color: #4CAF50;
         }
 
         .alert.error {
             background: #FFEBEE;
             color: #C62828;
+            border-color: #F44336;
         }
 
         .map-section {
@@ -424,27 +440,19 @@
             height: 500px;
         }
 
-    
-
-        .marker-cluster:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(42, 38, 35, 0.4);
-        }
-
         .maplibregl-popup-content {
             padding: 16px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(42, 38, 35, 0.3);
             font-family: 'BaWue Sans', sans-serif;
             border: 2px solid var(--black);
-            max-width: 280px;
         }
 
         .popup-image {
             width: 100%;
+            max-width: 250px;
             border-radius: 8px;
             margin-bottom: 12px;
-            display: block;
         }
 
         .popup-title {
@@ -531,6 +539,22 @@
             }
         }
 
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 252, 0, 0.3);
+            border-top-color: var(--yellow);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .scroll-hint {
             text-align: center;
             padding: 16px;
@@ -583,20 +607,6 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Pulsing Animation für Loading */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .image-loading {
-            animation: pulse 1.5s ease-in-out infinite;
         }
     </style>
 </head>
@@ -658,7 +668,7 @@
                         <span>
                             Ich stimme zu, dass mein Foto und Standort für Marketing-Zwecke 
                             genutzt werden dürfen. 
-                            <a href="datenschutz.html" target="_blank">Datenschutz</a>
+                            <a href="#datenschutz" target="_blank">Datenschutz</a>
                         </span>
                     </label>
                 </div>
@@ -686,8 +696,8 @@
         <p><strong>Ein Projekt von Scholz &amp; Friends</strong></p>
         <p>Wir können alles, außer Hochdeutsch.</p>
         <p>
-            <a href="datenschutz.html">Datenschutz</a> • 
-            <a href="impressum.html">Impressum</a> • 
+            <a href="#datenschutz">Datenschutz</a> • 
+            <a href="#impressum">Impressum</a> • 
             <a href="mailto:info@scholzandfriends.com">Kontakt</a>
         </p>
     </footer>
@@ -706,8 +716,6 @@
         let selectedPhoto = null;
         let userLocation = null;
         let map = null;
-        let markers = [];
-        let cluster = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
@@ -727,21 +735,20 @@
 
             map.on('load', () => {
                 loadStickersOnMap();
-                setInterval(loadStickersOnMap, 300000);
+                setInterval(loadStickersOnMap, 60000);
             });
-
-           
+        }
 
         async function loadStickersOnMap() {
             try {
-                console.log('🔄 Lade Sticker in Batches...');
-                
                 let allStickers = [];
                 let from = 0;
                 const batchSize = 1000;
                 let hasMore = true;
-                let batchNum = 1;
 
+                console.log('🔄 Lade Sticker in Batches...');
+
+                // Lade alle Daten in Batches von 1000
                 while (hasMore) {
                     const { data, error } = await supabaseClient
                         .from('sticker_findings')
@@ -757,10 +764,10 @@
 
                     if (data && data.length > 0) {
                         allStickers = allStickers.concat(data);
-                        console.log(`✅ Batch ${batchNum}: ${data.length} Sticker`);
+                        console.log(`  ✅ Batch ${Math.floor(from/batchSize) + 1}: ${data.length} Sticker`);
                         from += batchSize;
-                        batchNum++;
                         
+                        // Wenn weniger als batchSize zurück → keine weiteren Daten
                         if (data.length < batchSize) {
                             hasMore = false;
                         }
@@ -771,155 +778,60 @@
 
                 console.log(`📍 Gesamt: ${allStickers.length} Sticker geladen`);
 
-                // GeoJSON Features erstellen
-                const features = allStickers
-                    .filter(s => s.latitude && s.longitude)
-                    .map(sticker => ({
-                        type: 'Feature',
-                        properties: {
-                            cluster: false,
-                            stickerId: sticker.id,
-                            stickerData: sticker
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: [sticker.longitude, sticker.latitude]
+                // Alte Marker entfernen
+                const markers = document.querySelectorAll('.maplibregl-marker');
+                markers.forEach(marker => marker.remove());
+
+                // Alle Marker auf Karte setzen
+                if (allStickers.length > 0) {
+                    allStickers.forEach(sticker => {
+                        if (sticker.latitude && sticker.longitude) {
+                            const imageUrl = `https://images.weserv.nl/?url=${encodeURIComponent(sticker.image_url)}&w=300&h=300&fit=cover&output=webp`;
+                            
+                            const popup = new maptilersdk.Popup({ offset: 25 })
+                                .setHTML(`
+                                    <div>
+                                        <img src="${imageUrl}" 
+                                             class="popup-image" 
+                                             alt="Sticker"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div style="display: none; width: 100%; max-width: 250px; height: 200px; 
+                                                    background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
+                                                    border-radius: 8px; margin-bottom: 12px; align-items: center; 
+                                                    justify-content: center; font-size: 64px;">
+                                            📍
+                                        </div>
+                                        <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
+                                        <p class="popup-meta">
+                                            ${sticker.country || '?'} • 
+                                            ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
+                                        </p>
+                                    </div>
+                                `);
+
+                            new maptilersdk.Marker({ color: BAWUE_YELLOW })
+                                .setLngLat([sticker.longitude, sticker.latitude])
+                                .setPopup(popup)
+                                .addTo(map);
                         }
-                    }));
-
-         
-
+                    });
+                }
             } catch (error) {
                 console.error('Fehler beim Laden der Sticker:', error);
             }
         }
 
-        function updateClusters() {
-            if (!cluster || !map) return;
-
-            markers.forEach(marker => marker.remove());
-            markers = [];
-
-            const bounds = map.getBounds();
-            const zoom = Math.floor(map.getZoom());
-
-            const clusters = cluster.getClusters(
-                [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
-                zoom
-            );
-
-            console.log(`🗺️ ${clusters.length} Marker/Cluster für Zoom ${zoom}`);
-
-            clusters.forEach(clusterFeature => {
-                const [lng, lat] = clusterFeature.geometry.coordinates;
-                const props = clusterFeature.properties;
-
-                if (props.cluster) {
-                    // CLUSTER-MARKER
-                    const count = props.point_count;
-                    const size = count < 100 ? 40 : count < 1000 ? 50 : 60;
-
-                    const el = document.createElement('div');
-                    el.className = 'marker-cluster';
-                    el.style.width = size + 'px';
-                    el.style.height = size + 'px';
-                    el.style.fontSize = (size / 2.5) + 'px';
-                    el.textContent = count;
-
-                    const marker = new maptilersdk.Marker({ element: el })
-                        .setLngLat([lng, lat])
-                        .addTo(map);
-
-                    el.addEventListener('click', () => {
-                        const expansionZoom = Math.min(
-                            cluster.getClusterExpansionZoom(props.cluster_id),
-                            20
-                        );
-                        map.easeTo({
-                            center: [lng, lat],
-                            zoom: expansionZoom
-                        });
-                    });
-
-                    markers.push(marker);
-
-                } else {
-                    // EINZELNER MARKER
-                    const sticker = props.stickerData;
-                    
-                    if (!sticker) return;
-                    
-                    let cleanUrl = sticker.image_url ? sticker.image_url.replace(/&amp;/g, '&') : '';
-                    
-                    // ULTRA-KLEIN: 100x100px (8x schneller als vorher!)
-                    const imageUrlFast = cleanUrl ? `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}&w=100&h=100&fit=cover&output=jpg&q=70` : '';
-                    const imageUrlSlow = cleanUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}` : '';
-                    
-                    const popup = new maptilersdk.Popup({ 
-                        offset: 25,
-                        maxWidth: '240px'
-                    })
-                    .setHTML(`
-                        <div style="font-family: 'BaWue Sans', sans-serif;">
-                            ${cleanUrl ? `
-                                <div style="position: relative; width: 100%; height: 120px; margin-bottom: 12px;">
-                                    <!-- Loading Placeholder -->
-                                    <div class="image-loading" style="position: absolute; width: 100%; height: 100%; 
-                                                background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                                border-radius: 8px; display: flex; align-items: center; 
-                                                justify-content: center; font-size: 36px;">
-                                        ⏳
-                                    </div>
-                                    <!-- Bild (100x100px = super schnell!) -->
-                                    <img src="${imageUrlFast}" 
-                                         class="popup-image" 
-                                         alt="Sticker"
-                                         style="position: absolute; width: 100%; height: 100%; object-fit: cover; 
-                                                border-radius: 8px; opacity: 0; transition: opacity 0.3s;"
-                                         onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
-                                         onerror="
-                                             this.src='${imageUrlSlow}';
-                                             this.onerror=function(){
-                                                 this.previousElementSibling.innerHTML='<span style=font-size:48px>📍</span>';
-                                                 this.previousElementSibling.style.animation='none';
-                                             };
-                                         ">
-                                </div>
-                            ` : `
-                                <div style="width: 100%; height: 120px; 
-                                            background: linear-gradient(135deg, #FFFC00 0%, #FFD700 100%); 
-                                            border-radius: 8px; margin-bottom: 12px; display: flex;
-                                            align-items: center; justify-content: center; font-size: 48px;">
-                                    📍
-                                </div>
-                            `}
-                            <h3 class="popup-title">${sticker.city || 'Unbekannter Ort'}</h3>
-                            <p class="popup-meta">
-                                ${sticker.country || '?'} • 
-                                ${new Date(sticker.created_at).toLocaleDateString('de-DE')}
-                            </p>
-                        </div>
-                    `);
-
-                    const marker = new maptilersdk.Marker({ color: BAWUE_YELLOW })
-                        .setLngLat([lng, lat])
-                        .setPopup(popup)
-                        .addTo(map);
-
-                    markers.push(marker);
-                }
-            });
-        }
-
         async function loadStats() {
             try {
-                const { count, error } = await supabaseClient
+                // Count direkt via count-Option (effizienter)
+                const { count: totalCount, error: countError } = await supabaseClient
                     .from('sticker_findings')
                     .select('*', { count: 'exact', head: true })
                     .eq('status', 'approved');
 
-                if (error) throw error;
+                if (countError) throw countError;
 
+                // Länder mit Pagination
                 let allCountries = [];
                 let from = 0;
                 const batchSize = 1000;
@@ -950,10 +862,10 @@
                     allCountries.map(s => s.country).filter(c => c)
                 ).size;
 
-                document.getElementById('total-count').textContent = count || 0;
+                document.getElementById('total-count').textContent = totalCount || 0;
                 document.getElementById('country-count').textContent = uniqueCountries;
 
-                console.log(`📊 Stats: ${count} Sticker in ${uniqueCountries} Ländern`);
+                console.log(`📊 Stats: ${totalCount} Sticker in ${uniqueCountries} Ländern`);
 
             } catch (error) {
                 console.error('Fehler beim Laden der Stats:', error);
